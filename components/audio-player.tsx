@@ -25,12 +25,14 @@ function getProxiedAudioUrl(url: string): string {
 export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange }: AudioPlayerProps) {
   const waveformRef = useRef<HTMLDivElement>(null)
   const wavesurferRef = useRef<WaveSurfer | null>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(0.8)
   const [isMuted, setIsMuted] = useState(false)
   const [isReady, setIsReady] = useState(false)
+  const [waveformReady, setWaveformReady] = useState(false)
 
   useEffect(() => {
     onPlayStateChange?.(isPlaying)
@@ -38,26 +40,73 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
 
   useEffect(() => {
     const handleTogglePlay = () => {
-      if (wavesurferRef.current && isReady) {
-        wavesurferRef.current.playPause()
+      if (audioRef.current && isReady) {
+        if (isPlaying) {
+          audioRef.current.pause()
+        } else {
+          audioRef.current.play()
+        }
       }
     }
 
     window.addEventListener("togglePlay", handleTogglePlay)
     return () => window.removeEventListener("togglePlay", handleTogglePlay)
-  }, [isReady])
+  }, [isReady, isPlaying])
 
+  // Native audio element setup (instant playback)
   useEffect(() => {
-    if (!waveformRef.current || !set) return
+    if (!audioRef.current || !set) return
+
+    const audio = audioRef.current
+    const audioUrl = getProxiedAudioUrl(set.audioUrl)
+
+    setIsReady(false)
+    setIsPlaying(false)
+    setCurrentTime(0)
+    setWaveformReady(false)
+
+    audio.src = audioUrl
+    audio.volume = isMuted ? 0 : volume
+    audio.load()
+
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration)
+      setIsReady(true) // Audio is ready immediately!
+    }
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime)
+    }
+
+    const handlePlay = () => setIsPlaying(true)
+    const handlePause = () => setIsPlaying(false)
+    const handleEnded = () => setIsPlaying(false)
+
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata)
+    audio.addEventListener("timeupdate", handleTimeUpdate)
+    audio.addEventListener("play", handlePlay)
+    audio.addEventListener("pause", handlePause)
+    audio.addEventListener("ended", handleEnded)
+
+    return () => {
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata)
+      audio.removeEventListener("timeupdate", handleTimeUpdate)
+      audio.removeEventListener("play", handlePlay)
+      audio.removeEventListener("pause", handlePause)
+      audio.removeEventListener("ended", handleEnded)
+      audio.pause()
+      audio.src = ""
+    }
+  }, [set])
+
+  // Waveform setup (loads in background, optional)
+  useEffect(() => {
+    if (!waveformRef.current || !set || !audioRef.current) return
 
     // Destroy previous instance
     if (wavesurferRef.current) {
       wavesurferRef.current.destroy()
     }
-
-    setIsReady(false)
-    setIsPlaying(false)
-    setCurrentTime(0)
 
     const wavesurfer = WaveSurfer.create({
       container: waveformRef.current,
@@ -67,10 +116,9 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
       barWidth: 2,
       barGap: 1,
       barRadius: 2,
-      height: isMobile ? 40 : 60, // Reduced waveform height for better fit
+      height: isMobile ? 40 : 60,
       normalize: true,
-      backend: "MediaElement", // Enable progressive loading/streaming
-      mediaControls: false,
+      media: audioRef.current, // Use existing audio element!
       interact: true,
     })
 
@@ -78,22 +126,8 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
     wavesurfer.load(audioUrl)
 
     wavesurfer.on("ready", () => {
-      setDuration(wavesurfer.getDuration())
-      setIsReady(true)
-      wavesurfer.setVolume(volume)
+      setWaveformReady(true)
     })
-
-    wavesurfer.on("audioprocess", () => {
-      setCurrentTime(wavesurfer.getCurrentTime())
-    })
-
-    wavesurfer.on("seeking", () => {
-      setCurrentTime(wavesurfer.getCurrentTime())
-    })
-
-    wavesurfer.on("play", () => setIsPlaying(true))
-    wavesurfer.on("pause", () => setIsPlaying(false))
-    wavesurfer.on("finish", () => setIsPlaying(false))
 
     wavesurferRef.current = wavesurfer
 
@@ -102,23 +136,28 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
     }
   }, [set, isMobile])
 
+  // Volume control
   useEffect(() => {
-    if (wavesurferRef.current && isReady) {
-      wavesurferRef.current.setVolume(isMuted ? 0 : volume)
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume
     }
-  }, [volume, isMuted, isReady])
+  }, [volume, isMuted])
 
   const togglePlay = useCallback(() => {
-    if (wavesurferRef.current && isReady) {
-      wavesurferRef.current.playPause()
+    if (audioRef.current && isReady) {
+      if (isPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play()
+      }
     }
-  }, [isReady])
+  }, [isReady, isPlaying])
 
   const skip = useCallback(
     (seconds: number) => {
-      if (wavesurferRef.current && isReady) {
+      if (audioRef.current && isReady) {
         const newTime = Math.max(0, Math.min(duration, currentTime + seconds))
-        wavesurferRef.current.seekTo(newTime / duration)
+        audioRef.current.currentTime = newTime
       }
     },
     [isReady, currentTime, duration],
@@ -152,6 +191,9 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
 
   return (
     <div className={`flex flex-col bg-background overflow-hidden ${isMobile ? "h-full" : "flex-1 h-full"}`}>
+      {/* Hidden native audio element for instant playback */}
+      <audio ref={audioRef} preload="metadata" />
+
       {/* Mobile Header */}
       {isMobile && onClose && (
         <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-border">
@@ -187,8 +229,16 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
         </div>
 
         {/* Waveform */}
-        <div className="flex-shrink-0 w-full max-w-lg mb-4">
-          <div ref={waveformRef} className="w-full rounded-lg overflow-hidden cursor-pointer" />
+        <div className="flex-shrink-0 w-full max-w-lg mb-4 relative">
+          <div
+            ref={waveformRef}
+            className={`w-full rounded-lg overflow-hidden cursor-pointer transition-opacity duration-500 ${waveformReady ? "opacity-100" : "opacity-30"}`}
+          />
+          {!waveformReady && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-xs text-muted-foreground">Waveform lädt...</div>
+            </div>
+          )}
         </div>
 
         {/* Time Display */}
