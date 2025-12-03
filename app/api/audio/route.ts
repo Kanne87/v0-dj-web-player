@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
-  const url = request.nextUrl.searchParams.get("url")
+  const { searchParams } = new URL(request.url)
+  const url = searchParams.get("url")
 
   if (!url) {
     return NextResponse.json({ error: "URL parameter required" }, { status: 400 })
