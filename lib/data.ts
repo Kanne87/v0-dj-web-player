@@ -11,30 +11,12 @@ export interface DJSet {
 export const djSets: DJSet[] = [
   {
     id: "1",
-    title: "Test Set 1",
-    date: "2024-01-15",
-    duration: 3600, // 01:00:00
-    genres: ["Electronic"],
-    coverUrl: "https://picsum.photos/seed/set1/400/400",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-  },
-  {
-    id: "2",
-    title: "Test Set 2",
-    date: "2024-02-20",
-    duration: 2700, // 00:45:00
-    genres: ["Ambient"],
-    coverUrl: "https://picsum.photos/seed/set2/400/400",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-  },
-  {
-    id: "3",
-    title: "Test Set 3",
-    date: "2024-03-10",
-    duration: 4500, // 01:15:00
-    genres: ["Chillout"],
-    coverUrl: "https://picsum.photos/seed/set3/400/400",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+    title: "Rise Festival 2024",
+    date: "2025-11-23",
+    duration: 5565, // 01:32:45
+    genres: ["Drum & Bass"],
+    coverUrl: "https://kailohmann.de/music/cover1.jpg",
+    audioUrl: "https://kailohmann.de/music/2025-11-23 Cellschock Testmaterial.mp3",
   },
 ]
 
