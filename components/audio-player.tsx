@@ -10,9 +10,19 @@ interface AudioPlayerProps {
   set: DJSet | null
   onClose?: () => void
   isMobile?: boolean
+  onPlayStateChange?: (isPlaying: boolean) => void
 }
 
-export function AudioPlayer({ set, onClose, isMobile = false }: AudioPlayerProps) {
+function getProxiedAudioUrl(url: string): string {
+  // If it's already a local URL or blob, use it directly
+  if (url.startsWith("/") || url.startsWith("blob:")) {
+    return url
+  }
+  // Proxy external URLs through our API route
+  return `/api/audio?url=${encodeURIComponent(url)}`
+}
+
+export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange }: AudioPlayerProps) {
   const waveformRef = useRef<HTMLDivElement>(null)
   const wavesurferRef = useRef<WaveSurfer | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -21,6 +31,21 @@ export function AudioPlayer({ set, onClose, isMobile = false }: AudioPlayerProps
   const [volume, setVolume] = useState(0.8)
   const [isMuted, setIsMuted] = useState(false)
   const [isReady, setIsReady] = useState(false)
+
+  useEffect(() => {
+    onPlayStateChange?.(isPlaying)
+  }, [isPlaying, onPlayStateChange])
+
+  useEffect(() => {
+    const handleTogglePlay = () => {
+      if (wavesurferRef.current && isReady) {
+        wavesurferRef.current.playPause()
+      }
+    }
+
+    window.addEventListener("togglePlay", handleTogglePlay)
+    return () => window.removeEventListener("togglePlay", handleTogglePlay)
+  }, [isReady])
 
   useEffect(() => {
     if (!waveformRef.current || !set) return
@@ -42,11 +67,12 @@ export function AudioPlayer({ set, onClose, isMobile = false }: AudioPlayerProps
       barWidth: 2,
       barGap: 1,
       barRadius: 2,
-      height: isMobile ? 60 : 80,
+      height: isMobile ? 40 : 60, // Reduced waveform height for better fit
       normalize: true,
     })
 
-    wavesurfer.load(set.audioUrl)
+    const audioUrl = getProxiedAudioUrl(set.audioUrl)
+    wavesurfer.load(audioUrl)
 
     wavesurfer.on("ready", () => {
       setDuration(wavesurfer.getDuration())
@@ -102,7 +128,7 @@ export function AudioPlayer({ set, onClose, isMobile = false }: AudioPlayerProps
   const handleDownload = useCallback(() => {
     if (set) {
       const link = document.createElement("a")
-      link.href = set.audioUrl
+      link.href = getProxiedAudioUrl(set.audioUrl)
       link.download = `${set.title}.mp3`
       link.click()
     }
@@ -122,10 +148,10 @@ export function AudioPlayer({ set, onClose, isMobile = false }: AudioPlayerProps
   }
 
   return (
-    <div className={`flex flex-col bg-background ${isMobile ? "h-full" : "flex-1"}`}>
+    <div className={`flex flex-col bg-background overflow-hidden ${isMobile ? "h-full" : "flex-1 h-full"}`}>
       {/* Mobile Header */}
       {isMobile && onClose && (
-        <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-border">
           <h2 className="font-semibold">Now Playing</h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-secondary transition-colors">
             <X className="w-5 h-5" />
@@ -133,9 +159,9 @@ export function AudioPlayer({ set, onClose, isMobile = false }: AudioPlayerProps
         </div>
       )}
 
-      <div className={`flex-1 flex flex-col items-center justify-center p-6 ${isMobile ? "pb-8" : "p-8"}`}>
+      <div className={`flex-1 min-h-0 flex flex-col items-center justify-center p-4 gap-3 ${isMobile ? "" : "lg:p-6"}`}>
         {/* Cover Artwork */}
-        <div className={`relative ${isMobile ? "w-64 h-64" : "w-80 h-80"} rounded-xl overflow-hidden shadow-2xl mb-6`}>
+        <div className="flex-shrink relative w-full max-w-[min(50vh,20rem)] aspect-square rounded-xl overflow-hidden shadow-2xl mb-6">
           <Image src={set.coverUrl || "/placeholder.svg"} alt={set.title} fill className="object-cover" priority />
           {!isReady && (
             <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
@@ -145,7 +171,7 @@ export function AudioPlayer({ set, onClose, isMobile = false }: AudioPlayerProps
         </div>
 
         {/* Title & Date */}
-        <div className="text-center mb-6">
+        <div className="flex-shrink-0 text-center mb-6">
           <h1 className="text-xl font-bold text-foreground mb-1 text-balance">{set.title}</h1>
           <p className="text-muted-foreground">{formatDate(set.date)}</p>
           <div className="flex gap-2 mt-2 justify-center flex-wrap">
@@ -158,18 +184,18 @@ export function AudioPlayer({ set, onClose, isMobile = false }: AudioPlayerProps
         </div>
 
         {/* Waveform */}
-        <div className="w-full max-w-lg mb-4">
+        <div className="flex-shrink-0 w-full max-w-lg mb-4">
           <div ref={waveformRef} className="w-full rounded-lg overflow-hidden cursor-pointer" />
         </div>
 
         {/* Time Display */}
-        <div className="flex justify-between w-full max-w-lg text-sm text-muted-foreground mb-6 font-mono">
+        <div className="flex-shrink-0 flex justify-between w-full max-w-lg text-sm text-muted-foreground mb-6 font-mono">
           <span>{formatDuration(currentTime)}</span>
           <span>{formatDuration(duration || set.duration)}</span>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex-shrink-0 flex items-center gap-4 mb-6">
           <button
             onClick={() => skip(-15)}
             className="p-3 rounded-full bg-secondary hover:bg-secondary/80 transition-colors"
@@ -199,7 +225,7 @@ export function AudioPlayer({ set, onClose, isMobile = false }: AudioPlayerProps
         </div>
 
         {/* Volume & Download */}
-        <div className="flex items-center gap-4 w-full max-w-lg">
+        <div className="flex-shrink-0 flex items-center gap-4 w-full max-w-lg">
           <button
             onClick={toggleMute}
             className="p-2 rounded-lg hover:bg-secondary transition-colors"

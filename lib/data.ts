@@ -11,48 +11,30 @@ export interface DJSet {
 export const djSets: DJSet[] = [
   {
     id: "1",
-    title: "Midnight Warehouse Session",
-    date: "2024-11-15",
-    duration: 5400, // 90 min
-    genres: ["Techno", "Dark Techno"],
-    coverUrl: "/dark-techno-warehouse-abstract-art.jpg",
+    title: "Test Set 1",
+    date: "2024-01-15",
+    duration: 3600, // 01:00:00
+    genres: ["Electronic"],
+    coverUrl: "https://picsum.photos/seed/set1/400/400",
     audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
   },
   {
     id: "2",
-    title: "Summer Rooftop Vibes",
-    date: "2024-10-28",
-    duration: 7200, // 120 min
-    genres: ["House", "Deep House"],
-    coverUrl: "/summer-sunset-rooftop-party-abstract.jpg",
+    title: "Test Set 2",
+    date: "2024-02-20",
+    duration: 2700, // 00:45:00
+    genres: ["Ambient"],
+    coverUrl: "https://picsum.photos/seed/set2/400/400",
     audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
   },
   {
     id: "3",
-    title: "Underground Berlin Mix",
-    date: "2024-09-20",
-    duration: 4500, // 75 min
-    genres: ["Minimal", "Tech House"],
-    coverUrl: "/berlin-underground-club-neon-lights-abstract.jpg",
+    title: "Test Set 3",
+    date: "2024-03-10",
+    duration: 4500, // 01:15:00
+    genres: ["Chillout"],
+    coverUrl: "https://picsum.photos/seed/set3/400/400",
     audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-  },
-  {
-    id: "4",
-    title: "Peak Time Energy",
-    date: "2024-08-10",
-    duration: 3600, // 60 min
-    genres: ["Hard Techno", "Industrial"],
-    coverUrl: "/industrial-rave-strobe-lights-abstract.jpg",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
-  },
-  {
-    id: "5",
-    title: "Afterhours Downtempo",
-    date: "2024-07-05",
-    duration: 6300, // 105 min
-    genres: ["Ambient", "Downtempo"],
-    coverUrl: "/ambient-chill-sunrise-abstract-waves.jpg",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
   },
 ]
 
