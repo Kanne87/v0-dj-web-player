@@ -69,6 +69,9 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
       barRadius: 2,
       height: isMobile ? 40 : 60, // Reduced waveform height for better fit
       normalize: true,
+      backend: "MediaElement", // Enable progressive loading/streaming
+      mediaControls: false,
+      interact: true,
     })
 
     const audioUrl = getProxiedAudioUrl(set.audioUrl)
