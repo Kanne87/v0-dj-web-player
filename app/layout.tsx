@@ -7,13 +7,27 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "DJ Sets | Web Player",
-  description: "Listen to exclusive DJ sets and mixes",
-    generator: 'v0.app'
+  title: "DJ Web Player - Kai Lohmann",
+  description: "Stream DJ Sets von Kai Lohmann - Progressive Web App",
+  generator: 'v0.app',
+  applicationName: 'DJ Web Player',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'DJ Player',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/icon.svg',
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: "#00D4FF",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
