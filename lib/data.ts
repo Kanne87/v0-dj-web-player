@@ -6,7 +6,6 @@ export interface DJSet {
   genres: string[]
   coverUrl: string
   audioUrl: string
-  peaks?: number[][] // Optional pre-computed waveform peaks for instant loading
 }
 
 export function formatDuration(seconds: number): string {
