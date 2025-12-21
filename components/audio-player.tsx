@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
-import WaveSurfer from "wavesurfer.js"
 import { type DJSet, formatDuration, formatDate } from "@/lib/data"
 import Image from "next/image"
 import { Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Download, X } from "lucide-react"
@@ -23,16 +22,14 @@ function getProxiedAudioUrl(url: string): string {
 }
 
 export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange }: AudioPlayerProps) {
-  const waveformRef = useRef<HTMLDivElement>(null)
-  const wavesurferRef = useRef<WaveSurfer | null>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
+  const progressBarRef = useRef<HTMLDivElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(0.8)
   const [isMuted, setIsMuted] = useState(false)
   const [isReady, setIsReady] = useState(false)
-  const [waveformReady, setWaveformReady] = useState(false)
 
   useEffect(() => {
     onPlayStateChange?.(isPlaying)
@@ -63,7 +60,6 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
     setIsReady(false)
     setIsPlaying(false)
     setCurrentTime(0)
-    setWaveformReady(false)
 
     audio.src = audioUrl
     audio.volume = isMuted ? 0 : volume
@@ -71,7 +67,7 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
 
     const handleLoadedMetadata = () => {
       setDuration(audio.duration)
-      setIsReady(true) // Audio is ready immediately!
+      setIsReady(true)
     }
 
     const handleTimeUpdate = () => {
@@ -98,43 +94,6 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
       audio.src = ""
     }
   }, [set])
-
-  // Waveform setup (loads in background, optional)
-  useEffect(() => {
-    if (!waveformRef.current || !set || !audioRef.current) return
-
-    // Destroy previous instance
-    if (wavesurferRef.current) {
-      wavesurferRef.current.destroy()
-    }
-
-    const wavesurfer = WaveSurfer.create({
-      container: waveformRef.current,
-      waveColor: "#333333",
-      progressColor: "#00D4FF",
-      cursorColor: "#00D4FF",
-      barWidth: 2,
-      barGap: 1,
-      barRadius: 2,
-      height: isMobile ? 40 : 60,
-      normalize: true,
-      media: audioRef.current, // Use existing audio element!
-      interact: true,
-    })
-
-    const audioUrl = getProxiedAudioUrl(set.audioUrl)
-    wavesurfer.load(audioUrl)
-
-    wavesurfer.on("ready", () => {
-      setWaveformReady(true)
-    })
-
-    wavesurferRef.current = wavesurfer
-
-    return () => {
-      wavesurfer.destroy()
-    }
-  }, [set, isMobile])
 
   // Volume control
   useEffect(() => {
@@ -166,6 +125,20 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
   const toggleMute = useCallback(() => {
     setIsMuted(!isMuted)
   }, [isMuted])
+
+  const handleProgressClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!audioRef.current || !progressBarRef.current || !isReady) return
+
+      const rect = progressBarRef.current.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const percentage = x / rect.width
+      const newTime = percentage * duration
+
+      audioRef.current.currentTime = newTime
+    },
+    [duration, isReady],
+  )
 
   const handleDownload = useCallback(() => {
     if (set) {
@@ -228,17 +201,27 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
           </div>
         </div>
 
-        {/* Waveform */}
-        <div className="flex-shrink-0 w-full max-w-lg mb-4 relative">
+        {/* Progress Bar */}
+        <div className="flex-shrink-0 w-full max-w-lg mb-4">
           <div
-            ref={waveformRef}
-            className={`w-full rounded-lg overflow-hidden cursor-pointer transition-opacity duration-500 ${waveformReady ? "opacity-100" : "opacity-30"}`}
-          />
-          {!waveformReady && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-xs text-muted-foreground">Waveform lädt...</div>
-            </div>
-          )}
+            ref={progressBarRef}
+            onClick={handleProgressClick}
+            className="relative h-2 bg-secondary rounded-full cursor-pointer group hover:h-3 transition-all"
+          >
+            {/* Progress */}
+            <div
+              className="absolute h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full transition-all"
+              style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+            />
+            {/* Hover indicator */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-primary/50"
+              style={{
+                left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                transform: "translate(-50%, -50%)",
+              }}
+            />
+          </div>
         </div>
 
         {/* Time Display */}
