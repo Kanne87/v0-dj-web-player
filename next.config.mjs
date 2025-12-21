@@ -9,6 +9,7 @@ const nextConfig = {
     unoptimized: true,
   },
   output: 'standalone', // Required for Docker deployment
+  turbopack: {}, // Fix for next-pwa webpack config
 }
 
 export default withPWA({
