@@ -22,7 +22,7 @@ export function Setlist({ sets, activeSetId, isPlaying, onSelectSet, onPlayPause
             <Disc3 className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="font-bold text-lg text-foreground">K-P3</h1>
+            <h1 className="font-bold text-lg text-foreground">DJ Sets</h1>
             <p className="text-sm text-muted-foreground">{sets.length} Sets verfügbar</p>
           </div>
         </div>
