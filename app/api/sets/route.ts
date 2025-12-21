@@ -8,6 +8,7 @@ interface RawSet {
   genre: string[]
   cover: string
   audio: string
+  peaks?: number[][] // Optional pre-computed waveform peaks
 }
 
 interface RawSetsResponse {
@@ -22,6 +23,7 @@ export interface DJSet {
   genres: string[]
   coverUrl: string
   audioUrl: string
+  peaks?: number[][] // Optional pre-computed waveform peaks for instant loading
 }
 
 function parseDuration(duration: string): number {
@@ -41,6 +43,7 @@ function transformSet(rawSet: RawSet): DJSet {
     genres: rawSet.genre,
     coverUrl: rawSet.cover,
     audioUrl: rawSet.audio,
+    peaks: rawSet.peaks, // Pass through peaks if available
   }
 }
 

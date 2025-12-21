@@ -122,8 +122,16 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
       interact: true,
     })
 
-    const audioUrl = getProxiedAudioUrl(set.audioUrl)
-    wavesurfer.load(audioUrl)
+    // Use pre-computed peaks if available (instant loading!)
+    if (set.peaks && set.peaks.length > 0) {
+      const audioUrl = getProxiedAudioUrl(set.audioUrl)
+      wavesurfer.load(audioUrl, set.peaks, duration || set.duration)
+      setWaveformReady(true) // Instant!
+    } else {
+      // Fallback: Load and analyze audio file (slow)
+      const audioUrl = getProxiedAudioUrl(set.audioUrl)
+      wavesurfer.load(audioUrl)
+    }
 
     wavesurfer.on("ready", () => {
       setWaveformReady(true)
@@ -134,7 +142,7 @@ export function AudioPlayer({ set, onClose, isMobile = false, onPlayStateChange 
     return () => {
       wavesurfer.destroy()
     }
-  }, [set, isMobile])
+  }, [set, isMobile, duration])
 
   // Volume control
   useEffect(() => {
